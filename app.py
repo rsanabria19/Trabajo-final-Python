@@ -260,20 +260,19 @@ st.pyplot(fig2)
 
 st.header("🗺️ Distribución geográfica de las obras de aprovechamiento de agua subterránea en Uruguay")
 
-if {"Latitud", "Longitud"}.issubset(df_filtrado.columns):
+mapa = df_filtrado[
+    (df_filtrado["Latitud"].between(-35.5, -30.0)) &
+    (df_filtrado["Longitud"].between(-59.0, -53.0))
+][["Latitud", "Longitud"]]
 
-    mapa = df_filtrado[
-        ["Latitud", "Longitud"]
-    ].dropna()
+mapa = mapa.rename(
+    columns={
+        "Latitud": "lat",
+        "Longitud": "lon"
+    }
+)
 
-    mapa = mapa.rename(
-        columns={
-            "Latitud": "lat",
-            "Longitud": "lon"
-        }
-    )
-
-    st.map(mapa)
+st.map(mapa)
 
 else:
     st.info(
