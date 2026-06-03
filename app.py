@@ -246,7 +246,7 @@ sns.scatterplot(
 )
 
 ax2.set_title(
-    "Demora Técnica vs Demora Total"
+    "Demora técnica vs demora total"
 )
 
 ax2.set_xlabel("Demora técnica (días)")
