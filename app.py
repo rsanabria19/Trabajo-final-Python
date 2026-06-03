@@ -3,12 +3,19 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-# Configuración de la página institucional
+# ==========================================================
+# CONFIGURACIÓN
+# ==========================================================
+
 st.set_page_config(
-    page_title="Dinagua - Panel de gestión de trámites",
+    page_title="DINAGUA - Análisis de demora de trámite de solicitud de derechos de uso de agua subterránea",
     page_icon="💧",
     layout="wide"
 )
+
+# ==========================================================
+# TÍTULO
+# ==========================================================
 
 # Título principal de la aplicación pública
 st.markdown("<h1 style='text-align: center;'>💧 Solicitud de derechos de uso de agua subterránea - Tiempos de demora de trámite</h1>", unsafe_allow_html=True)
@@ -16,136 +23,273 @@ st.markdown("<h3 style='text-align: center; color: #7f8c8d;'>Sistema de Informac
 
 st.markdown("<p style='text-align: center; font-size: 1.1em;'>Esta aplicación interactiva permite explorar el comportamiento histórico de los tiempos de resolución de expedientes de solicitudes de uso de agua subterránea, filtrando por rangos temporales y analizando el impacto de variables clave.</p>", unsafe_allow_html=True)
 
+# ==========================================================
+# CARGA DE DATOS
+# ==========================================================
 
-# CARGA DE DATOS PROCESADOS (se utilizará el dataset limpio que guardamos en el Paso 7)
 @st.cache_data
-def load_data():
-    # Cargar el archivo unificado exportado con pathlib
-    df = pd.read_csv("data/processed/water_processed.csv")
-    return df
+def cargar_datos():
+    return pd.read_csv("data/processed/water_processed.csv")
 
+df = cargar_datos()
 
-try:
-    df_modelo = (load_data())
-except FileNotFoundError:
-    st.error(
-        "⚠️ No se encontró el archivo 'tramites_procesados.csv' en 'data/processed/'. Asegúrate de haber ejecutado las celdas de guardado en tu notebook.")
-    st.stop()
+# ==========================================================
+# SIDEBAR
+# ==========================================================
 
-# ==============================================================================
-# SIDEBAR DE CONTROL (st.sidebar)
-# ==============================================================================
-st.sidebar.image("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR6A6R4Q7ZpY6kGvYk8rX8Fqf3m9u_JzCg2XQ&s",
-                 width=100)  # Opcional: Logo genérico o estético
-st.sidebar.markdown("## 🎛️ Panel de control")
-st.sidebar.markdown("Utilice los controles de abajo para segmentar los expedientes bajo análisis.")
-
-# Filtro 1: Rango de días de demora (st.slider) basado en los mínimos y máximos reales
-min_dias = int(df_modelo['Dias_Demora'].min())
-max_dias = int(df_modelo['Dias_Demora'].max())
-
-rango_seleccionado = st.sidebar.slider(
-    "Seleccione el rango de días de demora:",
-    min_value=min_dias,
-    max_value=max_dias,
-    value=(min_dias, int(df_modelo['Dias_Demora'].quantile(0.95))),
-    # Por defecto acotado al percentil 95 para evitar distorsión inicial de outliers
-    step=1
+st.sidebar.markdown("# 🎛️ Filtros")
+st.sidebar.markdown(
+    """
+    Utilice el siguiente control para explorar
+    distintos rangos de demora total del trámite 
+    de solicitud de derechos de uso de agua subterránea.
+    """
 )
 
-# Filtro 2: Selector de departamentos clave (identificados por SelectKBest)
-departamentos_clave = ["DURAZNO", "PAYSANDÚ", "SALTO", "SAN JOSÉ"]
+# ----------------------------------------------------------
+# FILTRO 1 - DEMORA TOTAL
+# ----------------------------------------------------------
 
-depto_seleccionado = st.sidebar.selectbox(
-    "Filtrar por foco de departamento:",
-    ["TODOS"] + departamentos_clave
+min_demora = int(df["Demora_Total"].min())
+max_demora = int(df["Demora_Total"].max())
+
+rango_demora = st.sidebar.slider(
+    "Rango de demora total (días)",
+    min_value=min_demora,
+    max_value=max_demora,
+    value=(min_demora, max_demora)
 )
 
-# Nota metodológica para el usuario/profesor en el menú lateral
-st.sidebar.caption(
-    "💡 *Nota: Se muestran únicamente los departamentos seleccionados por el algoritmo "
-    "SelectKBest por su alto impacto estadístico en los tiempos de demora.*"
+# ----------------------------------------------------------
+# FILTRO 2 - DEPARTAMENTO
+# ----------------------------------------------------------
+
+departamentos = st.sidebar.multiselect(
+    "Departamento",
+    options=sorted(df["Departamento"].dropna().unique())
 )
 
+# ----------------------------------------------------------
+# FILTRO 3 - REGIONAL
+# ----------------------------------------------------------
 
-# =======================================================================
-# APLICACIÓN DE LOS FILTROS AL DATAFRAME ORIGINAL
-# =======================================================================
+regionales = st.sidebar.multiselect(
+    "Oficina Regional",
+    options=sorted(df["Regional"].dropna().unique())
+)
 
-# 1. Filtro por el rango de días de demora (Slider)
-df_filtrado = df_modelo[
-    (df_modelo['Dias_Demora'] >= rango_seleccionado[0]) &
-    (df_modelo['Dias_Demora'] <= rango_seleccionado[1])
+# ==========================================================
+# APLICACIÓN DE FILTROS
+# ==========================================================
+
+df_filtrado = df.copy()
+
+# Filtro por demora total
+df_filtrado = df_filtrado[
+    (df_filtrado["Demora_Total"] >= rango_demora[0]) &
+    (df_filtrado["Demora_Total"] <= rango_demora[1])
 ]
 
-# 2. Filtro por Departamento (Selectbox)
-if depto_seleccionado != "TODOS":
-    columna_depto = f"Departamento_{depto_seleccionado}"
-    if columna_depto in df_filtrado.columns:
-        df_filtrado = df_filtrado[df_filtrado[columna_depto] == 1]
+# Filtro por departamento
+if departamentos:
+    df_filtrado = df_filtrado[
+        df_filtrado["Departamento"].isin(departamentos)
+    ]
 
+# Filtro por regional
+if regionales:
+    df_filtrado = df_filtrado[
+        df_filtrado["Regional"].isin(regionales)
+    ]
 
-# ==============================================================================
-# RESUMEN DESCRIPTIVO (Métricas dinámicas)
-# ==============================================================================
-st.subheader("📋 Resumen estadístico descriptivo (datos filtrados)")
+# ==========================================================
+# INDICADORES PRINCIPALES
+# ==========================================================
 
-# Calculamos las métricas clave del dataset resultante
+st.header("📋 Indicadores principales")
+
 if not df_filtrado.empty:
-    media_demora = df_filtrado['Dias_Demora'].mean()
-    mediana_demora = df_filtrado['Dias_Demora'].median()
-    desviacion_demora = df_filtrado['Dias_Demora'].std()
-    min_actual = df_filtrado['Dias_Demora'].min()
-    max_actual = df_filtrado['Dias_Demora'].max()
-    rango_actual = max_actual - min_actual
 
-    # Mostramos métricas destacadas en tarjetas visuales (st.columns)
+    total_perforaciones = len(df_filtrado)
+
+    mediana_caudal = df_filtrado["Caudal"].median()
+
+    mediana_volumen = df_filtrado["Volumen"].median()
+
+    volumen_total = df_filtrado["Volumen"].sum()
+
+    mediana_demora_tecnica = df_filtrado["Demora_Tecnica"].median()
+
+    mediana_demora_registral = df_filtrado["Demora_Registral"].median()
+
+    mediana_demora_total = df_filtrado["Demora_Total"].median()
+
+    pendientes = (
+        df_filtrado["Estado"]
+        .astype(str)
+        .str.upper()
+        .str.contains("ESTUDIO|PENDIENTE", na=False)
+        .sum()
+    )
+
+    # ------------------------------------------------------
+    # FILA 1
+    # ------------------------------------------------------
+
     col1, col2, col3, col4 = st.columns(4)
-    col1.metric("Total Registros", f"{len(df_filtrado):,}")
-    col2.metric("Media de Demora", f"{media_demora:.1f} días")
-    col3.metric("Mediana de Demora", f"{mediana_demora:.1f} días")
-    col4.metric("Rango Operativo", f"{rango_actual:.0f} días")
 
-    # Tabla detallada con los percentiles solicitados por la letra del proyecto
-    st.markdown("**Cuadro estadístico detallado (Pandas describe)**")
-    st.dataframe(df_filtrado[['Demora en día', 'Es riego']].describe().T)
+    col1.metric(
+        "Perforaciones registradas",
+        f"{total_perforaciones:,}"
+    )
+
+    col2.metric(
+        "Mediana de caudal (m3)",
+        f"{mediana_caudal:.2f}"
+    )
+
+    col3.metric(
+        "Mediana de volumen (m3/año)",
+        f"{mediana_volumen:,.0f}"
+    )
+
+    col4.metric(
+        "Volumen total extraído (m3/año)",
+        f"{volumen_total:,.0f}"
+    )
+
+    # ------------------------------------------------------
+    # FILA 2
+    # ------------------------------------------------------
+
+    col5, col6, col7, col8 = st.columns(4)
+
+    col5.metric(
+        "Mediana demora técnica",
+        f"{mediana_demora_tecnica:.0f} días"
+    )
+
+    col6.metric(
+        "Mediana demora registral",
+        f"{mediana_demora_registral:.0f} días"
+    )
+
+    col7.metric(
+        "Mediana demora total",
+        f"{mediana_demora_total:.0f} días"
+    )
+
+
+
+    # ------------------------------------------------------
+    # USOS DEL AGUA
+    # ------------------------------------------------------
+
+    st.subheader("💧 Perforaciones según uso")
+
+    usos = (
+        df_filtrado["Uso"]
+        .value_counts()
+        .reset_index()
+    )
+
+    usos.columns = ["Uso", "Cantidad de perforaciones"]
+
+    st.dataframe(
+        usos,
+        use_container_width=True,
+        hide_index=True
+    )
+
 else:
-    st.warning("❌ No hay registros que coincidan con el rango seleccionado en el slider.")
+    st.warning(
+        "No existen registros para los filtros seleccionados."
+    )
 
-st.markdown("---")
 
-# ==============================================================================
-# VISUALIZACIÓN DINÁMICA
-# ==============================================================================
-st.subheader("📊 Análisis gráfico interactivo")
 
-col_graf1, col_graf2 = st.columns(2)
+# ==========================================================
+# HISTOGRAMA DEL TARGET
+# ==========================================================
 
-with col_graf1:
-    st.markdown("### 📈 Distribución del Target (`demora en día`)")
-    if not df_filtrado.empty:
-        fig_hist, ax_hist = plt.subplots(figsize=(6, 4))
-        sns.histplot(df_filtrado['Dias_Demora'], kde=True, color="#2c3e50", ax=ax_hist, bins=25)
-        ax_hist.set_title("Histograma de frecuencias de femora")
-        ax_hist.set_xlabel("Días transcurridos")
-        ax_hist.set_ylabel("Cantidad de expedientes")
-        st.pyplot(fig_hist)
-    else:
-        st.info("Sin datos para graficar histograma.")
+st.header("📊 Distribución de la demora total")
 
-with col_graf2:
-    st.markdown("### 🔍 Relación: impacto del uso de riego")
-    if not df_filtrado.empty:
-        fig_scatter, ax_scatter = plt.subplots(figsize=(6, 4))
-        # Generamos un scatter plot o boxplot que asocie el comportamiento continuo frente a Riego
-        sns.stripplot(data=df_filtrado, x='Es_Riego', y='Dias_Demora', palette="Blues", alpha=0.6, ax=ax_scatter,
-                      jitter=0.2)
-        ax_scatter.set_title("Dispersión de Tiempos por Tipo de Uso")
-        ax_scatter.set_xlabel("¿Es de Riego? (0 = No, 1 = Sí)")
-        ax_scatter.set_ylabel("Días de Demora")
-        st.pyplot(fig_scatter)
-    else:
-        st.info("Sin datos para graficar dispersión.")
+fig1, ax1 = plt.subplots(figsize=(8, 4))
 
-st.markdown("---")
-st.caption("Estructura técnica desarrollada para el proyecto final de ciencia de datos aplicado a Dinagua — 2026.")
+sns.histplot(
+    df_filtrado["Demora_Total"],
+    bins=30,
+    kde=True,
+    ax=ax1
+)
+
+ax1.set_title("Distribución de demora total")
+ax1.set_xlabel("Días")
+ax1.set_ylabel("Frecuencia")
+
+st.pyplot(fig1)
+
+# ==========================================================
+# SCATTER PLOT
+# ==========================================================
+
+st.header("🔍 Influencia de la demora técnica sobre demora total")
+
+fig2, ax2 = plt.subplots(figsize=(8, 5))
+
+sns.scatterplot(
+    data=df_filtrado,
+    x="Demora_Tecnica",
+    y="Demora_Total",
+    alpha=0.6,
+    ax=ax2
+)
+
+ax2.set_title(
+    "Demora Técnica vs Demora Total"
+)
+
+ax2.set_xlabel("Demora técnica (días)")
+ax2.set_ylabel("Demora total (días)")
+
+st.pyplot(fig2)
+
+# ==========================================================
+# MAPA
+# ==========================================================
+
+st.header("🗺️ Distribución geográfica de las obras de aprovechamiento de agua subterránea en Uruguay")
+
+if {"Latitud", "Longitud"}.issubset(df_filtrado.columns):
+
+    mapa = df_filtrado[
+        ["Latitud", "Longitud"]
+    ].dropna()
+
+    mapa = mapa.rename(
+        columns={
+            "Latitud": "lat",
+            "Longitud": "lon"
+        }
+    )
+
+    st.map(mapa)
+
+else:
+    st.info(
+        "No se encontraron columnas de latitud y longitud."
+    )
+
+# ==========================================================
+# DATOS FILTRADOS
+# ==========================================================
+
+st.header("📄 Datos filtrados")
+
+st.dataframe(
+    df_filtrado,
+    use_container_width=True
+)
+
+st.caption(
+    "Trabajo final de Python utilizando la base de datos del Sistema de Información Hídrica de Dinagua")
