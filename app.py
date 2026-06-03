@@ -101,6 +101,11 @@ if regionales:
     df_filtrado = df_filtrado[
         df_filtrado["Regional"].isin(regionales)
     ]
+# Filtro por registros seleccionados
+st.metric(
+    "Registros seleccionados",
+    f"{len(df_filtrado):,}"
+)
 
 # ==========================================================
 # INDICADORES PRINCIPALES
@@ -193,18 +198,51 @@ if not df_filtrado.empty:
         .reset_index()
     )
 
-    usos.columns = ["Uso", "Cantidad de perforaciones"]
+    usos.columns = ["Uso", "Cantidad"]
+
+    # Tabla
 
     st.dataframe(
         usos,
         use_container_width=True,
         hide_index=True
     )
+    # ------------------------------------------------------
+    # GRÁFICO DE BARRAS SEGÚN USO
+    # ------------------------------------------------------
 
-else:
-    st.warning(
-        "No existen registros para los filtros seleccionados."
+    fig_uso, ax_uso = plt.subplots(figsize=(8, 4))
+
+    colores_uso = {
+        "Riego": "#4C72B0",  # azul (similar al actual)
+        "Otros usos agropecuarios": "green",
+        "Industrial": "gray",
+        "Otros usos": "gold",
+        "Consumo humano": "skyblue",
+        "Usos no consuntivos": "purple"
+    }
+
+    sns.barplot(
+        data=usos,
+        x="Uso",
+        y="Cantidad",
+        hue="Uso",
+        palette=colores_uso,
+        legend=False,
+        ax=ax_uso
     )
+
+    ax_uso.set_title(
+        "Cantidad de perforaciones según uso"
+    )
+
+    ax_uso.set_xlabel("Uso")
+
+    ax_uso.set_ylabel("Cantidad")
+
+    plt.xticks(rotation=45)
+
+    st.pyplot(fig_uso)
 
 
 
@@ -241,7 +279,7 @@ sns.scatterplot(
     data=df_filtrado,
     x="Demora_Tecnica",
     y="Demora_Total",
-    alpha=0.6,
+    alpha=0.7,
     ax=ax2
 )
 
@@ -274,16 +312,11 @@ mapa = mapa.rename(
 
 st.map(mapa)
 
-else:
-    st.info(
-        "No se encontraron columnas de latitud y longitud."
-    )
-
 # ==========================================================
 # DATOS FILTRADOS
 # ==========================================================
 
-st.header("📄 Datos filtrados")
+st.header("📄 DataFrame resultante luego de realizar el EDA")
 
 st.dataframe(
     df_filtrado,
