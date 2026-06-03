@@ -293,6 +293,46 @@ ax2.set_ylabel("Demora total (días)")
 st.pyplot(fig2)
 
 # ==========================================================
+# COMPARACIÓN DE DEMORAS
+# ==========================================================
+
+st.header("📦 Comparación de las distribuciones de demora de trámite")
+
+if not df_filtrado.empty:
+
+    fig_box, ax_box = plt.subplots(figsize=(10, 6))
+
+    sns.boxplot(
+        data=df_filtrado[
+            [
+                "Demora_Tecnica",
+                "Demora_Registral",
+                "Demora_Total"
+            ]
+        ],
+        ax=ax_box
+    )
+
+    ax_box.set_title(
+        "Comparación de las distribuciones de demora"
+    )
+
+    ax_box.set_ylabel(
+        "Cantidad de días"
+    )
+
+    ax_box.set_xlabel(
+        "Tipo de demora"
+    )
+
+    st.pyplot(fig_box)
+
+else:
+    st.warning(
+        "No existen registros para los filtros seleccionados."
+    )
+
+# ==========================================================
 # MAPA
 # ==========================================================
 
