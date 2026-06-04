@@ -336,7 +336,7 @@ else:
 # MAPA
 # ==========================================================
 
-st.header("🗺️ Distribución geográfica de las obras de aprovechamiento de agua subterránea en Uruguay")
+st.header("🗺️ Distribución geográfica de las obras de aprovechamiento de agua subterránea con derecho de uso otorgado por Dinagua")
 
 mapa = df_filtrado[
     (df_filtrado["Latitud"].between(-35.5, -30.0)) &
@@ -364,4 +364,11 @@ st.dataframe(
 )
 
 st.caption(
-    "Trabajo final de Python utilizando la base de datos del Sistema de Información Hídrica de Dinagua")
+    """
+    Trabajo final de Python utilizando la base de datos del Sistema de Información Hídrica de Dinagua.
+
+    Realizado por Romina Sanabria Maciera - junio 2026.
+
+    Datos válidos al 7 de abril de 2026.
+    """
+)
