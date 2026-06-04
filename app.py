@@ -367,8 +367,10 @@ st.caption(
     """
     Trabajo final de Python utilizando la base de datos del Sistema de Información Hídrica de Dinagua.
 
+    Datos válidos al 7 de abril de 2026.
+    
     Realizado por Romina Sanabria Maciera - junio 2026.
 
-    Datos válidos al 7 de abril de 2026.
+    
     """
 )
