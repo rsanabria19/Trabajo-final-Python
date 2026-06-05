@@ -184,13 +184,118 @@ if not df_filtrado.empty:
         f"{mediana_demora_total:.0f} días"
     )
 
+    # ==========================================================
+    # HISTOGRAMA DEL TARGET
+    # ==========================================================
 
+    st.header("📊 Distribución de la demora total")
 
+    fig1, ax1 = plt.subplots(figsize=(8, 4))
+
+    sns.histplot(
+        df_filtrado["Demora_Total"],
+        bins=30,
+        kde=True,
+        ax=ax1
+    )
+
+    ax1.set_title("Distribución de demora total")
+    ax1.set_xlabel("Días")
+    ax1.set_ylabel("Frecuencia")
+
+    st.pyplot(fig1)
+
+    st.caption(
+        "Este histograma muestra la distribución de los tiempos totales de resolución "
+        "de los expedientes. Permite identificar los valores más frecuentes y la presencia "
+        "de trámites con demoras excepcionalmente altas."
+    )
+    # ==========================================================
+    # SCATTER PLOT
+    # ==========================================================
+
+    st.header("🔍 Influencia de la demora técnica sobre demora total")
+
+    fig2, ax2 = plt.subplots(figsize=(8, 5))
+
+    sns.scatterplot(
+        data=df_filtrado,
+        x="Demora_Tecnica",
+        y="Demora_Total",
+        alpha=0.7,
+        ax=ax2
+    )
+
+    ax2.set_title(
+        "Demora técnica vs demora total"
+    )
+
+    ax2.set_xlabel("Demora técnica (días)")
+    ax2.set_ylabel("Demora total (días)")
+
+    st.pyplot(fig2)
+
+    st.caption(
+        """
+        Este gráfico muestra la relación entre la demora técnica y la demora total
+        del expediente. Una tendencia ascendente indica que a medida que aumenta la
+        demora técnica también tiende a incrementarse el tiempo total de resolución.
+        """
+    )
+
+    # ==========================================================
+    # COMPARACIÓN DE DEMORAS
+    # ==========================================================
+
+    st.header("📦 Comparación de las distribuciones de demora de trámite")
+
+    if not df_filtrado.empty:
+
+        fig_box, ax_box = plt.subplots(figsize=(10, 6))
+
+        sns.boxplot(
+            data=df_filtrado[
+                [
+                    "Demora_Tecnica",
+                    "Demora_Registral",
+                    "Demora_Total"
+                ]
+            ],
+            ax=ax_box
+        )
+
+        ax_box.set_title(
+            "Comparación de las distribuciones de demora"
+        )
+
+        ax_box.set_ylabel(
+            "Cantidad de días"
+        )
+
+        ax_box.set_xlabel(
+            "Tipo de demora"
+        )
+
+        st.pyplot(fig_box)
+
+    else:
+        st.warning(
+            "No existen registros para los filtros seleccionados."
+        )
+
+    st.caption(
+        """
+        Este gráfico compara la distribución de los tiempos de demora técnica,
+        registral y total de los expedientes. La línea central representa la mediana,
+        la caja contiene el 50% de los casos y los puntos muestran valores atípicos
+        (expedientes con tiempos de resolución excepcionalmente altos).
+        """
+    )
     # ------------------------------------------------------
     # USOS DEL AGUA
     # ------------------------------------------------------
 
-    st.subheader("💧 Perforaciones según uso")
+    st.subheader("💧 Cantidad de perforaciones según uso")
 
     usos = (
         df_filtrado["Uso"]
@@ -233,104 +338,60 @@ if not df_filtrado.empty:
     )
 
     ax_uso.set_title(
-        "Cantidad de perforaciones según uso"
+        "Cantidad de perforaciones según uso - vista gráfica", fontweight="bold"
     )
 
     ax_uso.set_xlabel("Uso")
 
     ax_uso.set_ylabel("Cantidad")
 
-    plt.xticks(rotation=45)
+    plt.xticks(rotation=45, fontsize=6)
 
     st.pyplot(fig_uso)
 
-
-
 # ==========================================================
-# HISTOGRAMA DEL TARGET
+# DEMORA TÉCNICA SEGÚN USO DEL AGUA
 # ==========================================================
 
-st.header("📊 Distribución de la demora total")
+st.header("💧 Demora técnica según el uso del agua")
 
-fig1, ax1 = plt.subplots(figsize=(8, 4))
+fig_uso_demora, ax_uso_demora = plt.subplots(figsize=(12, 6))
 
-sns.histplot(
-    df_filtrado["Demora_Total"],
-    bins=30,
-    kde=True,
-    ax=ax1
-)
-
-ax1.set_title("Distribución de demora total")
-ax1.set_xlabel("Días")
-ax1.set_ylabel("Frecuencia")
-
-st.pyplot(fig1)
-
-# ==========================================================
-# SCATTER PLOT
-# ==========================================================
-
-st.header("🔍 Influencia de la demora técnica sobre demora total")
-
-fig2, ax2 = plt.subplots(figsize=(8, 5))
-
-sns.scatterplot(
+sns.boxplot(
     data=df_filtrado,
-    x="Demora_Tecnica",
-    y="Demora_Total",
-    alpha=0.7,
-    ax=ax2
+    x="Uso",
+    y="Demora_Tecnica",
+    ax=ax_uso_demora
 )
 
-ax2.set_title(
-    "Demora técnica vs demora total"
+ax_uso_demora.set_title(
+    "Demora técnica según el uso del agua",
+    fontsize=14,
+    fontweight="bold"
 )
 
-ax2.set_xlabel("Demora técnica (días)")
-ax2.set_ylabel("Demora total (días)")
+ax_uso_demora.set_xlabel(
+    "Uso",
+    fontsize=11
+)
 
-st.pyplot(fig2)
+ax_uso_demora.set_ylabel(
+    "Días",
+    fontsize=11
+)
 
-# ==========================================================
-# COMPARACIÓN DE DEMORAS
-# ==========================================================
+plt.xticks(
+    rotation=45,
+    fontsize=10
+)
 
-st.header("📦 Comparación de las distribuciones de demora de trámite")
+st.pyplot(fig_uso_demora)
 
-if not df_filtrado.empty:
-
-    fig_box, ax_box = plt.subplots(figsize=(10, 6))
-
-    sns.boxplot(
-        data=df_filtrado[
-            [
-                "Demora_Tecnica",
-                "Demora_Registral",
-                "Demora_Total"
-            ]
-        ],
-        ax=ax_box
-    )
-
-    ax_box.set_title(
-        "Comparación de las distribuciones de demora"
-    )
-
-    ax_box.set_ylabel(
-        "Cantidad de días"
-    )
-
-    ax_box.set_xlabel(
-        "Tipo de demora"
-    )
-
-    st.pyplot(fig_box)
-
-else:
-    st.warning(
-        "No existen registros para los filtros seleccionados."
-    )
+st.caption(
+    "Este gráfico compara la distribución de la demora técnica entre los distintos "
+    "usos del agua. Permite identificar qué tipos de aprovechamiento presentan "
+    "mayor variabilidad y mayores tiempos de evaluación técnica."
+)
 
 # ==========================================================
 # MAPA
@@ -368,9 +429,6 @@ st.caption(
     Trabajo final de Python utilizando la base de datos del Sistema de Información Hídrica de Dinagua.
 
     Datos válidos al 7 de abril de 2026.
-    
-    Realizado por Romina Sanabria Maciera - junio 2026.
-
     
     """
 )
