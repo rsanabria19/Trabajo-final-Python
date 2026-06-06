@@ -188,70 +188,168 @@ if not df_filtrado.empty:
     # HISTOGRAMA DEL TARGET
     # ==========================================================
 
-    st.header("📊 Distribución de la demora total")
+    st.header("📈 Análisis de la demora total de los trámites")
 
-    fig1, ax1 = plt.subplots(figsize=(8, 4))
+    st.markdown(
+        """
+        El siguiente gráfico permite observar cómo se distribuyen los tiempos
+        totales de tramitación registrados en los expedientes analizados.
+        """
+    )
+
+    fig1, ax1 = plt.subplots(figsize=(10, 5))
 
     sns.histplot(
-        df_filtrado["Demora_Total"],
-        bins=30,
+        data=df_filtrado,
+        x="Demora_Total",
+        bins=40,
+        color="#2E8B57",
+        alpha=0.85,
+        edgecolor="black",
+        linewidth=0.3,
         kde=True,
         ax=ax1
     )
 
-    ax1.set_title("Distribución de demora total")
-    ax1.set_xlabel("Días")
-    ax1.set_ylabel("Frecuencia")
+    media = df_filtrado["Demora_Total"].mean()
+    mediana = df_filtrado["Demora_Total"].median()
+
+    ax1.axvline(
+        media,
+        color="#1F3A5F",
+        linestyle="-.",
+        linewidth=2,
+        label=f"Media: {media:.0f} días"
+    )
+
+    ax1.axvline(
+        mediana,
+        color="#E76F51",
+        linestyle="--",
+        linewidth=2,
+        label=f"Mediana: {mediana:.0f} días"
+    )
+
+    ax1.set_title(
+        "Distribución de los tiempos de tramitación",
+        fontsize=15,
+        fontweight="semibold"
+    )
+
+    ax1.set_xlabel("Demora total (días)")
+    ax1.set_ylabel("Cantidad de trámites")
+
+    ax1.grid(
+        which="major",
+        linestyle="--",
+        linewidth=0.7,
+        alpha=0.4
+    )
+
+    plt.tight_layout()
 
     st.pyplot(fig1)
 
     st.caption(
-        "Este histograma muestra la distribución de los tiempos totales de resolución "
-        "de los expedientes. Permite identificar los valores más frecuentes y la presencia "
-        "de trámites con demoras excepcionalmente altas."
+        """
+        La mayor concentración de trámites se encuentra en determinados rangos de días,
+        mientras que algunos casos presentan demoras considerablemente superiores al resto.
+        La comparación entre la media y la mediana ayuda a identificar posibles valores
+        extremos y el grado de asimetría de la distribución.
+        """
     )
+
+    st.markdown("---")
+
     # ==========================================================
     # SCATTER PLOT
     # ==========================================================
 
-    st.header("🔍 Influencia de la demora técnica sobre demora total")
+    st.header("🔍 Influencia de la demora técnica sobre la demora total")
 
-    fig2, ax2 = plt.subplots(figsize=(8, 5))
+    st.markdown(
+        """
+        El siguiente gráfico permite analizar la relación entre la demora técnica
+        y la duración total de los trámites registrados.
+        """
+    )
 
-    sns.scatterplot(
+    fig2, ax2 = plt.subplots(figsize=(10, 5))
+
+    sns.regplot(
         data=df_filtrado,
         x="Demora_Tecnica",
         y="Demora_Total",
-        alpha=0.7,
+        scatter_kws={
+            "alpha": 0.5,
+            "s": 45,
+            "color": "#2E8B57"
+        },
+        line_kws={
+            "color": "#085041",
+            "linewidth": 2
+        },
         ax=ax2
     )
 
     ax2.set_title(
-        "Demora técnica vs demora total"
+        "Relación entre demora técnica y demora total",
+        fontsize=15,
+        fontweight="semibold"
     )
 
-    ax2.set_xlabel("Demora técnica (días)")
-    ax2.set_ylabel("Demora total (días)")
+    ax2.set_xlabel(
+        "Demora técnica (días)",
+        fontsize=11
+    )
+
+    ax2.set_ylabel(
+        "Demora total (días)",
+        fontsize=11
+    )
+
+    ax2.grid(
+        which="major",
+        linestyle="--",
+        linewidth=0.7,
+        alpha=0.4
+    )
+
+    sns.despine()
+
+    plt.tight_layout()
 
     st.pyplot(fig2)
 
     st.caption(
         """
-        Este gráfico muestra la relación entre la demora técnica y la demora total
-        del expediente. Una tendencia ascendente indica que a medida que aumenta la
-        demora técnica también tiende a incrementarse el tiempo total de resolución.
+        Cada punto representa un trámite. La línea de tendencia resume el comportamiento
+        general observado en los datos. Una pendiente positiva sugiere que los expedientes
+        con mayores demoras técnicas tienden a presentar también mayores tiempos totales
+        de tramitación.
         """
     )
+
+    st.markdown("---")
 
     # ==========================================================
     # COMPARACIÓN DE DEMORAS
     # ==========================================================
 
-    st.header("📦 Comparación de las distribuciones de demora de trámite")
+    st.header("📦 Comparación de las distribuciones de demora")
+
+    st.markdown(
+        """
+        El siguiente gráfico permite comparar la distribución de las demoras
+        técnicas, registrales y totales observadas en los expedientes seleccionados.
+        """
+    )
 
     if not df_filtrado.empty:
 
-        fig_box, ax_box = plt.subplots(figsize=(10, 6))
+        fig_box, ax_box = plt.subplots(figsize=(11, 5))
+
+        palette = ["#2E8B57", "#5FA777", "#A8D5BA"]
 
         sns.boxplot(
             data=df_filtrado[
@@ -261,20 +359,37 @@ if not df_filtrado.empty:
                     "Demora_Total"
                 ]
             ],
+            palette=palette,
+            width=0.55,
             ax=ax_box
         )
 
         ax_box.set_title(
-            "Comparación de las distribuciones de demora"
-        )
-
-        ax_box.set_ylabel(
-            "Cantidad de días"
+            "Distribución de los distintos tipos de demora",
+            fontsize=15,
+            fontweight="semibold"
         )
 
         ax_box.set_xlabel(
-            "Tipo de demora"
+            "Tipo de demora",
+            fontsize=11
         )
+
+        ax_box.set_ylabel(
+            "Cantidad de días",
+            fontsize=11
+        )
+
+        ax_box.grid(
+            which="major",
+            linestyle="--",
+            linewidth=0.7,
+            alpha=0.4
+        )
+
+        sns.despine()
+
+        plt.tight_layout()
 
         st.pyplot(fig_box)
 
@@ -285,17 +400,29 @@ if not df_filtrado.empty:
 
     st.caption(
         """
-        Este gráfico compara la distribución de los tiempos de demora técnica,
-        registral y total de los expedientes. La línea central representa la mediana,
-        la caja contiene el 50% de los casos y los puntos muestran valores atípicos
-        (expedientes con tiempos de resolución excepcionalmente altos).
+        Los diagramas de caja permiten visualizar la variabilidad de cada tipo de demora.
+        La línea central representa la mediana, mientras que la caja contiene el 50% de
+        los expedientes. Los puntos ubicados fuera de los límites habituales corresponden
+        a casos con tiempos de demora considerablemente superiores al resto.
         """
     )
+
+    st.markdown("---")
+
     # ------------------------------------------------------
     # USOS DEL AGUA
     # ------------------------------------------------------
 
     st.subheader("💧 Cantidad de perforaciones según uso")
+
+    st.markdown(
+        """
+        Durante el análisis exploratorio se identificó que las variables vinculadas al
+        uso declarado del agua presentan una fuerte relación con los tiempos de demora
+        del trámite. Por este motivo, resulta relevante analizar cómo se distribuyen
+        las perforaciones entre los distintos tipos de uso registrados.
+        """
+    )
 
     usos = (
         df_filtrado["Uso"]
@@ -304,50 +431,113 @@ if not df_filtrado.empty:
     )
 
     usos.columns = ["Uso", "Cantidad"]
-
-    # Tabla
-
     st.dataframe(
         usos,
+        column_config={
+            "Uso": st.column_config.TextColumn(
+                "Tipo de uso"
+            ),
+            "Cantidad": st.column_config.NumberColumn(
+                "Cantidad",
+                format="%d"
+            )
+        },
         use_container_width=True,
         hide_index=True
     )
+    st.caption(
+        """
+        La tabla muestra la cantidad de expedientes asociados a cada categoría de uso.
+        Esta distribución permite identificar cuáles son los usos más frecuentes dentro
+        de los registros analizados y aporta contexto para interpretar las diferencias
+        observadas en las demoras de tramitación.
+        """
+    )
+
+    st.markdown("---")
+
+
     # ------------------------------------------------------
     # GRÁFICO DE BARRAS SEGÚN USO
     # ------------------------------------------------------
 
-    fig_uso, ax_uso = plt.subplots(figsize=(8, 4))
+    st.header("🚰 Distribución de las perforaciones según su uso")
 
-    colores_uso = {
-        "Riego": "#4C72B0",  # azul (similar al actual)
-        "Otros usos agropecuarios": "green",
-        "Industrial": "gray",
-        "Otros usos": "gold",
-        "Consumo humano": "skyblue",
-        "Usos no consuntivos": "purple"
-    }
-
-    sns.barplot(
-        data=usos,
-        x="Uso",
-        y="Cantidad",
-        hue="Uso",
-        palette=colores_uso,
-        legend=False,
-        ax=ax_uso
+    st.markdown(
+        """
+        El siguiente gráfico presenta una vista cuantitativa de las perforaciones 
+        registradas, clasificadas según el tipo de uso principal asignado.
+        """
     )
 
-    ax_uso.set_title(
-        "Cantidad de perforaciones según uso - vista gráfica", fontweight="bold"
+    if not usos.empty:
+
+        fig_uso, ax_uso = plt.subplots(figsize=(11, 5))
+
+        colores_uso = {
+            "Riego": "#4C72B0",
+            "Otros usos agropecuarios": "green",
+            "Industrial": "gray",
+            "Otros usos": "gold",
+            "Consumo humano": "skyblue",
+            "Usos no consuntivos": "purple"
+        }
+
+        sns.barplot(
+            data=usos,
+            x="Uso",
+            y="Cantidad",
+            hue="Uso",
+            palette=colores_uso,
+            legend=False,
+            ax=ax_uso
+        )
+
+        ax_uso.set_title(
+            "Cantidad de perforaciones según uso - vista gráfica",
+            fontsize=15,
+            fontweight="semibold"
+        )
+
+        ax_uso.set_xlabel(
+            "Uso",
+            fontsize=11
+        )
+
+        ax_uso.set_ylabel(
+            "Cantidad",
+            fontsize=11
+        )
+
+        plt.xticks(rotation=45, fontsize=9)
+
+        ax_uso.grid(
+            which="major",
+            linestyle="--",
+            linewidth=0.7,
+            alpha=0.4
+        )
+
+        sns.despine()
+
+        plt.tight_layout()
+
+        st.pyplot(fig_uso)
+
+    else:
+        st.warning(
+            "No existen registros para los filtros seleccionados."
+        )
+
+    st.caption(
+        """
+        El gráfico de barras permite identificar rápidamente la prevalencia de cada tipo 
+        de uso en el volumen total de perforaciones. Esto facilita el análisis visual de 
+        la demanda de recursos hídricos subterráneos.
+        """
     )
 
-    ax_uso.set_xlabel("Uso")
-
-    ax_uso.set_ylabel("Cantidad")
-
-    plt.xticks(rotation=45, fontsize=6)
-
-    st.pyplot(fig_uso)
+    st.markdown("---")
 
 # ==========================================================
 # DEMORA TÉCNICA SEGÚN USO DEL AGUA
@@ -355,43 +545,83 @@ if not df_filtrado.empty:
 
 st.header("💧 Demora técnica según el uso del agua")
 
-fig_uso_demora, ax_uso_demora = plt.subplots(figsize=(12, 6))
-
-sns.boxplot(
-    data=df_filtrado,
-    x="Uso",
-    y="Demora_Tecnica",
-    ax=ax_uso_demora
+st.markdown(
+    """
+    El siguiente gráfico permite comparar la distribución de las demoras 
+    técnicas observadas en los expedientes según el uso del agua asignado.
+    """
 )
 
-ax_uso_demora.set_title(
-    "Demora técnica según el uso del agua",
-    fontsize=14,
-    fontweight="bold"
-)
+if not df_filtrado.empty:
 
-ax_uso_demora.set_xlabel(
-    "Uso",
-    fontsize=11
-)
+    fig_uso_demora, ax_uso_demora = plt.subplots(figsize=(11, 5))
 
-ax_uso_demora.set_ylabel(
-    "Días",
-    fontsize=11
-)
+    colores_uso = {
+        "Riego": "#4C72B0",
+        "Otros usos agropecuarios": "green",
+        "Industrial": "gray",
+        "Otros usos": "gold",
+        "Consumo humano": "skyblue",
+        "Usos no consuntivos": "purple"
+    }
 
-plt.xticks(
-    rotation=45,
-    fontsize=10
-)
+    sns.boxplot(
+        data=df_filtrado,
+        x="Uso",
+        y="Demora_Tecnica",
+        hue="Uso",
+        palette=colores_uso,
+        legend=False,
+        width=0.55,
+        ax=ax_uso_demora
+    )
 
-st.pyplot(fig_uso_demora)
+    ax_uso_demora.set_title(
+        "Demora técnica según el uso del agua",
+        fontsize=15,
+        fontweight="semibold"
+    )
+
+    ax_uso_demora.set_xlabel(
+        "Uso",
+        fontsize=11
+    )
+
+    ax_uso_demora.set_ylabel(
+        "Cantidad de días",
+        fontsize=11
+    )
+
+    plt.xticks(rotation=45, fontsize=9)
+
+    ax_uso_demora.grid(
+        which="major",
+        linestyle="--",
+        linewidth=0.7,
+        alpha=0.4
+    )
+
+    sns.despine()
+
+    plt.tight_layout()
+
+    st.pyplot(fig_uso_demora)
+
+else:
+    st.warning(
+        "No existen registros para los filtros seleccionados."
+    )
 
 st.caption(
-    "Este gráfico compara la distribución de la demora técnica entre los distintos "
-    "usos del agua. Permite identificar qué tipos de aprovechamiento presentan "
-    "mayor variabilidad y mayores tiempos de evaluación técnica."
+    """
+    Cada caja representa el 50% central de los datos, donde la línea interna marca la mediana 
+    de días de trámite. Los numerosos puntos superiores representan casos atípicos o 'outliers' 
+    que superaron el comportamiento habitual, evidenciando expedientes con demoras críticas 
+    (algunas cercanas a los 900 días) independientemente del tipo de uso del agua.
+    """
 )
+
+st.markdown("---")
 
 # ==========================================================
 # MAPA
@@ -399,10 +629,21 @@ st.caption(
 
 st.header("🗺️ Distribución geográfica de las obras de aprovechamiento de agua subterránea con derecho de uso otorgado por Dinagua")
 
+# Diccionario de colores idéntico al de los gráficos anteriores
+colores_uso = {
+    "Riego": "#4C72B0",
+    "Otros usos agropecuarios": "#008000",  # Hex para "green"
+    "Industrial": "#808080",               # Hex para "gray"
+    "Otros usos": "#FFD700",               # Hex para "gold"
+    "Consumo humano": "#87CEEB",           # Hex para "skyblue"
+    "Usos no consuntivos": "#800080"       # Hex para "purple"
+}
+
+# Filtramos coordenadas válidas e incluimos la columna 'Uso' para el mapeo
 mapa = df_filtrado[
     (df_filtrado["Latitud"].between(-35.5, -30.0)) &
     (df_filtrado["Longitud"].between(-59.0, -53.0))
-][["Latitud", "Longitud"]]
+][["Latitud", "Longitud", "Uso"]].dropna()
 
 mapa = mapa.rename(
     columns={
@@ -411,18 +652,35 @@ mapa = mapa.rename(
     }
 )
 
-st.map(mapa)
+if not mapa.empty:
+    # Creamos la columna de color mapeando el Uso con nuestro diccionario (usamos negro como respaldo si falta alguno)
+    mapa["color"] = mapa["Uso"].map(colores_uso).fillna("#000000")
 
-# ==========================================================
-# DATOS FILTRADOS
-# ==========================================================
+    # Graficamos el mapa aplicando la columna de color creada
+    st.map(
+        data=mapa,
+        latitude="lat",
+        longitude="lon",
+        color="color",
+        size=20
+    )
+else:
+    st.warning(
+        "No existen registros con coordenadas válidas para los filtros seleccionados."
+    )
 
-st.header("📄 DataFrame resultante luego de realizar el EDA")
-
-st.dataframe(
-    df_filtrado,
-    use_container_width=True
+st.caption(
+    """
+    El mapa muestra la localización georreferenciada de cada perforación dentro del 
+    territorio nacional. Cada punto está codificado con el color correspondiente a su 
+    tipo de aprovechamiento principal (manteniendo la misma paleta de los gráficos anteriores), 
+    lo que permite identificar visualmente zonas de alta concentración de demanda y la 
+    distribución espacial de los diferentes usos del agua subterránea.
+    """
 )
+
+st.markdown("---")
+
 
 st.caption(
     """
