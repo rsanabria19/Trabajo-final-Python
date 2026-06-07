@@ -183,6 +183,77 @@ if not df_filtrado.empty:
         "Mediana demora total",
         f"{mediana_demora_total:.0f} días"
     )
+    st.header("📋 Resumen descriptivo")
+
+    st.markdown(
+        """
+        Estadísticas descriptivas calculadas sobre el conjunto de datos resultante
+        luego de aplicar los filtros seleccionados.
+        """
+    )
+
+    columnas_numericas = [
+        "Demora_Tecnica",
+        "Demora_Registral",
+        "Demora_Total"
+    ]
+
+    resumen = df_filtrado[columnas_numericas].agg(
+        [
+            "mean",
+            "median",
+            "std",
+            "min",
+            lambda x: x.quantile(0.25),
+            lambda x: x.quantile(0.75),
+            "max"
+        ]
+    ).T
+
+    resumen.columns = [
+        "Media",
+        "Mediana",
+        "Desv. Std",
+        "Mínimo",
+        "Q1 (25%)",
+        "Q3 (75%)",
+        "Máximo"
+    ]
+
+    resumen["Rango"] = (
+            resumen["Máximo"] -
+            resumen["Mínimo"]
+    )
+
+    resumen = resumen[
+        [
+            "Mediana",
+            "Media",
+            "Desv. Std",
+            "Mínimo",
+            "Q1 (25%)",
+            "Q3 (75%)",
+            "Máximo",
+            "Rango"
+        ]
+    ]
+
+    st.dataframe(
+        resumen.style.format("{:.2f}"),
+        use_container_width=True
+    )
+
+    st.caption(
+        """
+        La tabla resume las principales medidas de tendencia central y dispersión
+        para las variables de demora analizadas. Estas estadísticas permiten
+        caracterizar el comportamiento general de los tiempos de tramitación y
+        evaluar la presencia de variabilidad entre los expedientes.
+        """
+    )
+
+    st.markdown("---")
+
 
     # ==========================================================
     # HISTOGRAMA DEL TARGET
